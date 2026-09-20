@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-PARKING_FILE = Path(__file__).resolve().parent.parent / "parking.txt"
+PARKING_FILE = Path(__file__).resolve().parent / "parking.txt"
 
 
 def Машин_оруулах():
