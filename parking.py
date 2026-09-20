@@ -1,11 +1,15 @@
 from datetime import datetime
+from pathlib import Path
+
+
+PARKING_FILE = Path(__file__).resolve().parent.parent / "parking.txt"
 
 
 def Машин_оруулах():
     номер = input("Улсын дугаар: ")
     цаг = datetime.now().strftime("%H:%M")
     
-    with open("parking.txt", "a", encoding="utf-8") as file:
+    with open(PARKING_FILE, "a", encoding="utf-8") as file:
         file.write(f'{номер} - {цаг}\n')
         
         return "<<Амжилттай нэвтэрлээ>>"
@@ -18,7 +22,7 @@ def Машин_гарах():
     Жагсаалт = []
     
                  
-    with open("parking.txt", "r", encoding="utf-8") as file:
+    with open(PARKING_FILE, "r", encoding="utf-8") as file:
         for номерцаг in file:
             if номер in номерцаг:
                 parts = номерцаг.strip().split(" - ")
@@ -49,7 +53,7 @@ def Машин_гарах():
             else:
                 Жагсаалт.append(номерцаг) 
                 
-    with open("parking.txt", "w", encoding="utf-8") as file:
+    with open(PARKING_FILE, "w", encoding="utf-8") as file:
         for номерцаг in  Жагсаалт:
             file.write(номерцаг)      
                               
@@ -63,12 +67,12 @@ def Машин_устгах():
     Жагсаалт = []
     номер = input("Улсын дугаар: ")
     
-    with open("parking.txt", "r", encoding="utf-8") as file:
+    with open(PARKING_FILE, "r", encoding="utf-8") as file:
         for номерцаг in file:
             if номер not in номерцаг:
                 Жагсаалт.append(номерцаг)  
                 
-    with open("parking.txt", "w", encoding="utf-8") as file:
+    with open(PARKING_FILE, "w", encoding="utf-8") as file:
         for номерцаг in Жагсаалт:
             file.write(номерцаг)
                    
@@ -79,7 +83,7 @@ def Машинууд_харах():
     одоогийн_нийт_минут = одоо.hour * 60 + одоо.minute
     машинууд = []
 
-    with open("parking.txt", "r", encoding="utf-8") as file:
+    with open(PARKING_FILE, "r", encoding="utf-8") as file:
         for мөр in file:
             номер, орсон_цаг = мөр.strip().split(" - ")
             орсон_цагийн_тоо, орсон_минут = map(int, орсон_цаг.split(":"))
@@ -101,7 +105,7 @@ def Машинууд_харах():
 def Нийт_машин():
     машинууд = []
     
-    with open("parking.txt", "r", encoding="utf-8") as file:
+    with open(PARKING_FILE, "r", encoding="utf-8") as file:
         for номерцаг in file:
             машинууд.append(номерцаг)
     
