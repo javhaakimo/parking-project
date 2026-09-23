@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -42,8 +43,17 @@ def _зогссон_минут(орсон, гарсан):
     return -(-секунд // 60)
 
 
+def _оролт_авах(асуулт):
+    # Python 3.14 дээр input() кирилл оролтыг эвддэг тул readline ашиглана
+    print(асуулт, end="", flush=True)
+    мөр = sys.stdin.readline()
+    if not мөр:
+        raise EOFError
+    return мөр.rstrip("\r\n")
+
+
 def Машин_оруулах():
-    номер = input("Улсын дугаар: ")
+    номер = _оролт_авах("Улсын дугаар: ")
     цаг = datetime.now().strftime(ЦАГИЙН_ФОРМАТ)
     
     with open(PARKING_FILE, "a", encoding="utf-8") as file:
@@ -52,7 +62,7 @@ def Машин_оруулах():
         return "<<Амжилттай нэвтэрлээ>>"
 
 def Машин_гарах():
-    номер = input("Улсын дугаар: ")
+    номер = _оролт_авах("Улсын дугаар: ")
     гарсан_цаг = datetime.now()
     found = False
     
@@ -96,7 +106,7 @@ def Машин_гарах():
 
 def Машин_устгах():
     Жагсаалт = []
-    номер = input("Улсын дугаар: ")
+    номер = _оролт_авах("Улсын дугаар: ")
     
     with open(PARKING_FILE, "r", encoding="utf-8") as file:
         for номерцаг in file:
@@ -147,7 +157,7 @@ def main():
         print("5. Нийт_машин")
         print("6. Exit")
 
-        choice = input("Сонголт: ")
+        choice = _оролт_авах("Сонголт: ")
 
         try:
             if choice == "1":

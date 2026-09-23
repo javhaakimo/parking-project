@@ -1,7 +1,7 @@
 import io
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -17,6 +17,18 @@ def _одоо(*утга):
             return cls(*утга)
 
     return patch.object(parking, "datetime", ТогтмолОгноо)
+
+
+@contextmanager
+def _оролт(*мөрүүд):
+    # parking.sys.stdin-г StringIO-р орлож readline-аар оролт өгнө;
+    # input() дуудвал (Python 3.14-ийн кирилл алдааг дахин авчрахгүйн тулд) алдаа шидэнэ
+    урсгал = io.StringIO("".join(f"{мөр}\n" for мөр in мөрүүд))
+    with patch.object(parking.sys, "stdin", урсгал), patch(
+        "builtins.input",
+        side_effect=AssertionError("input() must not be called"),
+    ):
+        yield
 
 
 class ТөлбөрТооцохТест(unittest.TestCase):
@@ -59,7 +71,7 @@ class ФайлТест(unittest.TestCase):
 
 class МашинГарахТест(ФайлТест):
     def _гарах(self, номер, *одоо):
-        with _одоо(*одоо), patch("builtins.input", side_effect=[номер]):
+        with _одоо(*одоо), _оролт(номер):
             buf = io.StringIO()
             with redirect_stdout(buf):
                 parking.Машин_гарах()
@@ -175,7 +187,7 @@ class МашинГарахТест(ФайлТест):
 
 class МашинОруулахТест(ФайлТест):
     def test_огноотой_бичнэ(self):
-        with _одоо(2026, 9, 23, 12, 30, 45), patch("builtins.input", side_effect=["1111УБА"]):
+        with _одоо(2026, 9, 23, 12, 30, 45), _оролт("1111УБА"):
             parking.Машин_оруулах()
         self.assertEqual(self._унших(), "1111УБА - 2026-09-23 12:30:45\n")
 
@@ -204,7 +216,7 @@ class MainТест(ФайлТест):
         self._бичих(["1111УБА - 10:00"])
         buf = io.StringIO()
         with _одоо(2026, 9, 23, 12, 0), \
-                patch("builtins.input", side_effect=["2", "1111УБА", "4", "6"]), \
+                _оролт("2", "1111УБА", "4", "6"), \
                 redirect_stdout(buf):
             parking.main()
         гаралт = buf.getvalue()
@@ -212,6 +224,45 @@ class MainТест(ФайлТест):
         self.assertEqual(гаралт.count("===== Алдаа: parking.txt-ийн 1-р мөр"), 2)
         self.assertNotIn("Traceback", гаралт)
         self.assertEqual(self._унших(), "1111УБА - 10:00\n")
+
+
+class ОролтАвахТест(unittest.TestCase):
+    def test_кирилл_хадгална(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("1111УБА\n")):
+            self.assertEqual(parking._оролт_авах("Асуулт: "), "1111УБА")
+
+    def test_кирилл_ө_үсэгтэй(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("2255УБӨ\n")):
+            self.assertEqual(parking._оролт_авах("Асуулт: "), "2255УБӨ")
+
+    def test_мөрийн_төгсгөл_хасна(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("1111УБА\r\n")):
+            self.assertEqual(parking._оролт_авах("Асуулт: "), "1111УБА")
+
+    def test_хоосон_мөр(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("\n")):
+            self.assertEqual(parking._оролт_авах("Асуулт: "), "")
+
+    def test_хоосон_урсгал_EOFError(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("")):
+            with self.assertRaises(EOFError):
+                parking._оролт_авах("Асуулт: ")
+
+    def test_асуулт_хэвлэнэ(self):
+        with patch.object(parking.sys, "stdin", io.StringIO("1111УБА\n")):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                parking._оролт_авах("Улсын дугаар: ")
+        self.assertEqual(buf.getvalue(), "Улсын дугаар: ")
+
+
+class MainИнтеграцТест(ФайлТест):
+    def test_кирилл_дугаар_бүртгэнэ(self):
+        with _одоо(2026, 9, 23, 12, 30, 45), _оролт("1", "2255УБӨ", "6"):
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                parking.main()
+        self.assertEqual(self._унших(), "2255УБӨ - 2026-09-23 12:30:45\n")
 
 
 if __name__ == "__main__":
