@@ -7,6 +7,7 @@ A simple Python console project for managing vehicle entry and exit records.
 - Add vehicle entry
 - Record entry time
 - Remove vehicle when exiting
+- Automatic parking fee calculation on exit (1000₮ per started hour)
 - View currently parked vehicles
 - Store data in a text file
 
