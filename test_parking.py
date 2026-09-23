@@ -141,16 +141,36 @@ class МашинГарахТест(ФайлТест):
 
     def test_хуучин_формат_алдаа_өгнө(self):
         self._бичих(["1111УБА - 10:00"])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(parking.ФорматАлдаа) as ctx:
             self._гарах("1111УБА", 2026, 9, 23, 12, 0)
+        мессеж = str(ctx.exception)
+        self.assertIn("1-р мөр", мессеж)
+        self.assertIn('"1111УБА - 10:00"', мессеж)
+        self.assertIn("ДУГААР - YYYY-MM-DD HH:MM:SS", мессеж)
+        self.assertIn("гараар засаад", мессеж)
         # алдаа гарвал файл өөрчлөгдөхгүй
         self.assertEqual(self._унших(), "1111УБА - 10:00\n")
 
     def test_секундгүй_формат_алдаа_өгнө(self):
         self._бичих(["1111УБА - 2026-09-23 10:00"])
-        with self.assertRaises(ValueError):
+        with self.assertRaises(parking.ФорматАлдаа) as ctx:
             self._гарах("1111УБА", 2026, 9, 23, 12, 0)
+        self.assertIn('"1111УБА - 2026-09-23 10:00"', str(ctx.exception))
         self.assertEqual(self._унших(), "1111УБА - 2026-09-23 10:00\n")
+
+    def test_алдаатай_мөрийн_дугаар(self):
+        мөрүүд = ["2222УБА - 2026-09-23 09:00:00", "1111УБА - 10:00"]
+        self._бичих(мөрүүд)
+        with self.assertRaises(parking.ФорматАлдаа) as ctx:
+            self._гарах("1111УБА", 2026, 9, 23, 12, 0)
+        self.assertIn("2-р мөр", str(ctx.exception))
+        self.assertEqual(self._унших(), "\n".join(мөрүүд) + "\n")
+
+    def test_тусгаарлагчгүй_мөр(self):
+        self._бичих(["1111УБА 2026-09-23 10:00:00"])
+        with self.assertRaises(parking.ФорматАлдаа) as ctx:
+            self._гарах("1111УБА", 2026, 9, 23, 12, 0)
+        self.assertIn("1-р мөр", str(ctx.exception))
 
 
 class МашинОруулахТест(ФайлТест):
@@ -170,6 +190,28 @@ class МашинуудХарахТест(ФайлТест):
         self._бичих(["1111УБА - 2026-09-22 23:30:00"])
         with _одоо(2026, 9, 23, 0, 15):
             self.assertIn("0 цаг 45 минут", parking.Машинууд_харах())
+
+    def test_хуучин_формат_алдаа_өгнө(self):
+        self._бичих(["2222УБА - 2026-09-23 09:00:00", "1111УБА - 10:00"])
+        with _одоо(2026, 9, 23, 12, 0):
+            with self.assertRaises(parking.ФорматАлдаа) as ctx:
+                parking.Машинууд_харах()
+        self.assertIn("2-р мөр", str(ctx.exception))
+
+
+class MainТест(ФайлТест):
+    def test_хуучин_формат_menu_унахгүй(self):
+        self._бичих(["1111УБА - 10:00"])
+        buf = io.StringIO()
+        with _одоо(2026, 9, 23, 12, 0), \
+                patch("builtins.input", side_effect=["2", "1111УБА", "4", "6"]), \
+                redirect_stdout(buf):
+            parking.main()
+        гаралт = buf.getvalue()
+        # 2 болон 4 сонголт хоёулаа алдааны мессеж хэвлээд menu руу буцна
+        self.assertEqual(гаралт.count("===== Алдаа: parking.txt-ийн 1-р мөр"), 2)
+        self.assertNotIn("Traceback", гаралт)
+        self.assertEqual(self._унших(), "1111УБА - 10:00\n")
 
 
 if __name__ == "__main__":

@@ -13,8 +13,26 @@ def Төлбөр_тооцох(минут):
     return цаг * ЦАГИЙН_ТӨЛБӨР
 
 
-def _цаг_унших(текст):
-    return datetime.strptime(текст.strip(), ЦАГИЙН_ФОРМАТ)
+class ФорматАлдаа(ValueError):
+    pass
+
+
+def _мөр_задлах(мөр, мөрийн_дугаар):
+    # Буруу форматтай мөрийн огноог таамаглахгүй, засах заавар өгнө
+    мөр = мөр.strip()
+    parts = мөр.split(" - ")
+    try:
+        if len(parts) != 2:
+            raise ValueError
+        орсон = datetime.strptime(parts[1], ЦАГИЙН_ФОРМАТ)
+    except ValueError:
+        raise ФорматАлдаа(
+            f'parking.txt-ийн {мөрийн_дугаар}-р мөр буруу форматтай: "{мөр}"\n'
+            "Зөв формат: ДУГААР - YYYY-MM-DD HH:MM:SS "
+            "(жишээ: 1111УБА - 2026-09-23 10:00:00)\n"
+            "Энэ мөрийг гараар засаад дахин оролдоно уу."
+        ) from None
+    return parts[0], parts[1], орсон
 
 
 def _зогссон_минут(орсон, гарсан):
@@ -42,12 +60,9 @@ def Машин_гарах():
     
                  
     with open(PARKING_FILE, "r", encoding="utf-8") as file:
-        for номерцаг in file:
+        for мөрийн_дугаар, номерцаг in enumerate(file, 1):
             if номер in номерцаг:
-                parts = номерцаг.strip().split(" - ")
-                орсон_цаг = parts[1]
-
-                орсон = _цаг_унших(орсон_цаг)
+                _, орсон_цаг, орсон = _мөр_задлах(номерцаг, мөрийн_дугаар)
 
                 if гарсан_цаг.replace(microsecond=0) < орсон:
                     print("===== Гарсан цаг орсон цагаас өмнө байна:", орсон_цаг)
@@ -99,9 +114,9 @@ def Машинууд_харах():
     машинууд = []
 
     with open(PARKING_FILE, "r", encoding="utf-8") as file:
-        for мөр in file:
-            номер, орсон_цаг = мөр.strip().split(" - ")
-            зогссон_минут = max(_зогссон_минут(_цаг_унших(орсон_цаг), одоо), 0)
+        for мөрийн_дугаар, мөр in enumerate(file, 1):
+            номер, орсон_цаг, орсон = _мөр_задлах(мөр, мөрийн_дугаар)
+            зогссон_минут = max(_зогссон_минут(орсон, одоо), 0)
 
             зогссон_цаг = зогссон_минут // 60
             үлдсэн_минут = зогссон_минут % 60
@@ -123,7 +138,7 @@ def Нийт_машин():
        
        
         
-if __name__ == "__main__":
+def main():
     while True:
         print("\n1. Машин_оруулах")
         print("2. Машин_гарах")
@@ -134,20 +149,27 @@ if __name__ == "__main__":
 
         choice = input("Сонголт: ")
 
-        if choice == "1":
-            print(Машин_оруулах())
+        try:
+            if choice == "1":
+                print(Машин_оруулах())
 
-        elif choice == "2":
-            Машин_гарах()
+            elif choice == "2":
+                Машин_гарах()
 
-        elif choice == "3":
+            elif choice == "3":
                 print(Машин_устгах())
 
-        elif choice == "4":
+            elif choice == "4":
                 print(Машинууд_харах())
 
-        elif choice == "5":
+            elif choice == "5":
                 print(Нийт_машин())
 
-        elif choice == "6":
-            break
+            elif choice == "6":
+                break
+        except ФорматАлдаа as алдаа:
+            print("===== Алдаа:", алдаа)
+
+
+if __name__ == "__main__":
+    main()
