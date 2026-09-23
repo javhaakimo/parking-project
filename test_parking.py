@@ -385,6 +385,33 @@ class ХуучинДугаарТест(ФайлТест):
         self.assertEqual(self._унших(), "2222УБА - 2026-09-23 11:00:00\n")
 
 
+class ФайлгүйТест(ФайлТест):
+    # parking.txt git-д хадгалагддаггүй тул шинэ clone дээр байхгүй: хоосон зогсоол
+    def setUp(self):
+        super().setUp()
+        self.parking_file.unlink()
+
+    def _ажиллуулах(self, функц, *мөрүүд):
+        buf = io.StringIO()
+        with _одоо(2026, 9, 23, 12, 0), _оролт(*мөрүүд), redirect_stdout(buf):
+            үр_дүн = функц()
+        return үр_дүн, buf.getvalue()
+
+    def test_харах_хоосон(self):
+        self.assertEqual(self._ажиллуулах(parking.Машинууд_харах)[0], "")
+
+    def test_тоолох_тэг(self):
+        self.assertEqual(self._ажиллуулах(parking.Нийт_машин)[0], 0)
+
+    def test_гарах_олдсонгүй(self):
+        _, гаралт = self._ажиллуулах(parking.Машин_гарах, "1111УБА")
+        self.assertIn("===== Машин олдсонгүй", гаралт)
+
+    def test_устгах_крашгүй(self):
+        үр_дүн, _ = self._ажиллуулах(parking.Машин_устгах, "1111УБА")
+        self.assertEqual(үр_дүн, "===== Машин устлаа")
+
+
 class ХоосонДугаарТест(ФайлТест):
     МӨРҮҮД = ["1111УБА - 2026-09-23 10:00:00", "2222УБА - 2026-09-23 11:00:00"]
 
