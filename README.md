@@ -19,6 +19,20 @@ A simple Python console project for managing vehicle entry and exit records.
 - Lists
 - Dictionaries
 
+## Run the Project
+
+Run the console application from the project folder:
+
+```bash
+python parking.py
+```
+
+To run the automated checks:
+
+```bash
+python -m unittest test_parking.py
+```
+
 ## Project Purpose
 
 This project was created as part of my Python learning journey while studying to become an AI Engineer.
